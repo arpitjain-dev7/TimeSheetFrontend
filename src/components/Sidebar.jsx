@@ -31,15 +31,18 @@ const navItems = [
   {
     label: "Timesheets",
     icon: <AccessTimeIcon />,
-    path: "/dashboard/timesheets",
+    path: "/manager/timesheets",
   },
-  { label: "Approved", icon: <CheckCircleIcon />, path: "/dashboard/approved" },
+  {
+    label: "Approved",
+    icon: <CheckCircleIcon />,
+    path: "/manager/timesheets?status=APPROVED",
+  },
   {
     label: "Pending",
     icon: <PendingActionsIcon />,
-    path: "/dashboard/pending",
+    path: "/manager/timesheets?status=SUBMITTED",
   },
-  { label: "Settings", icon: <SettingsIcon />, path: "/dashboard/settings" },
 ];
 
 /**
@@ -101,7 +104,8 @@ const Sidebar = ({ open, onClose, isMobile }) => {
       {/* Navigation list */}
       <List sx={{ mt: 1, px: open ? 1 : 0.5, flexGrow: 1 }}>
         {navItems.map(({ label, icon, path }) => {
-          const active = location.pathname === path;
+          const currentFull = location.pathname + location.search;
+          const active = currentFull === path || location.pathname === path && !path.includes("?");
           return (
             <Tooltip
               key={label}

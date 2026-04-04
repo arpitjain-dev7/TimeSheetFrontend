@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   Box,
@@ -61,6 +61,7 @@ const ManagerTimesheetsPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [searchParams] = useSearchParams();
 
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,8 +69,13 @@ const ManagerTimesheetsPage = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const navigate = useNavigate();
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState({});
+
+  // Pre-populate from ?status= query param (e.g. from sidebar Approved/Pending links)
+  const statusFromUrl = searchParams.get("status") || "";
+  const [filters, setFilters] = useState({ ...EMPTY_FILTERS, status: statusFromUrl });
+  const [appliedFilters, setAppliedFilters] = useState(
+    statusFromUrl ? { ...EMPTY_FILTERS, status: statusFromUrl } : {}
+  );
   const [rejectTarget, setRejectTarget] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
 
@@ -104,8 +110,10 @@ const ManagerTimesheetsPage = () => {
     }
   };
 
+  // Fetch on mount using any pre-applied status filter from URL
   useEffect(() => {
-    fetchTimesheets(0, {});
+    const initFilters = statusFromUrl ? { ...EMPTY_FILTERS, status: statusFromUrl } : {};
+    fetchTimesheets(0, initFilters);
   }, []); // eslint-disable-line
 
   const handleApplyFilters = () => {
@@ -184,10 +192,18 @@ const ManagerTimesheetsPage = () => {
             }}
           >
             <Typography variant="h6" fontWeight={700}>
-              Timesheet Management
+              {statusFromUrl === "APPROVED"
+                ? "Approved Timesheets"
+                : statusFromUrl === "SUBMITTED"
+                ? "Pending Timesheets"
+                : "Timesheet Management"}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.25 }}>
-              Review, approve, and reject team timesheets
+              {statusFromUrl === "APPROVED"
+                ? "All timesheets that have been approved"
+                : statusFromUrl === "SUBMITTED"
+                ? "All timesheets awaiting your review and approval"
+                : "Review, approve, and reject team timesheets"}
             </Typography>
           </Box>
 
@@ -415,10 +431,14 @@ const ManagerTimesheetsPage = () => {
                             : "Not set"}
                         </TableCell>
                         <TableCell>
-                          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          <Box
+                            sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
+                          >
                             {/* Review – always visible */}
                             <Button
-                              onClick={() => navigate(`/manager/timesheets/${ts.id}`)}
+                              onClick={() =>
+                                navigate(`/manager/timesheets/${ts.id}`)
+                              }
                               size="small"
                               variant="outlined"
                               startIcon={<VisibilityIcon fontSize="small" />}
@@ -429,7 +449,10 @@ const ManagerTimesheetsPage = () => {
                                 fontSize: 12,
                                 borderColor: "#3949ab",
                                 color: "#3949ab",
-                                "&:hover": { bgcolor: "rgba(57,73,171,0.06)", borderColor: "#1a237e" },
+                                "&:hover": {
+                                  bgcolor: "rgba(57,73,171,0.06)",
+                                  borderColor: "#1a237e",
+                                },
                               }}
                             >
                               Review
@@ -446,7 +469,10 @@ const ManagerTimesheetsPage = () => {
                                   color="success"
                                   startIcon={
                                     approvingId === ts.id ? (
-                                      <CircularProgress size={12} color="inherit" />
+                                      <CircularProgress
+                                        size={12}
+                                        color="inherit"
+                                      />
                                     ) : (
                                       <CheckCircleIcon fontSize="small" />
                                     )
