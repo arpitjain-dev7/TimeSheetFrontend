@@ -38,7 +38,7 @@ import { useAuth } from "../context/AuthContext";
 import { filterTimesheets } from "../api/timesheetApi";
 import { getUsers } from "../services/api";
 
-//  Helpers 
+//  Helpers
 
 const formatDate = (d) => {
   if (!d) return "Not set";
@@ -50,7 +50,7 @@ const formatDate = (d) => {
   }
 };
 
-//  Stat Card 
+//  Stat Card
 
 const StatCard = ({ title, value, icon, gradient, subtitle, loading }) => (
   <Card
@@ -111,7 +111,7 @@ const StatCard = ({ title, value, icon, gradient, subtitle, loading }) => (
   </Card>
 );
 
-//  Main Dashboard 
+//  Main Dashboard
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -132,21 +132,29 @@ const Dashboard = () => {
 
   const SIDEBAR_WIDTH = sidebarOpen ? 240 : 72;
 
-  useEffect(() => { setSidebarOpen(!isMobile); }, [isMobile]);
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const loadDashboard = async () => {
     setDataLoading(true);
     try {
       // Parallel fetch: counts for each status + recent 10 timesheets + user count
-      const [totalRes, approvedRes, submittedRes, rejectedRes, recentRes, usersRes] =
-        await Promise.allSettled([
-          filterTimesheets({}, 0, 1),
-          filterTimesheets({ status: "APPROVED" }, 0, 1),
-          filterTimesheets({ status: "SUBMITTED" }, 0, 1),
-          filterTimesheets({ status: "REJECTED" }, 0, 1),
-          filterTimesheets({}, 0, 10),
-          getUsers({ page: 0, size: 1 }),
-        ]);
+      const [
+        totalRes,
+        approvedRes,
+        submittedRes,
+        rejectedRes,
+        recentRes,
+        usersRes,
+      ] = await Promise.allSettled([
+        filterTimesheets({}, 0, 1),
+        filterTimesheets({ status: "APPROVED" }, 0, 1),
+        filterTimesheets({ status: "SUBMITTED" }, 0, 1),
+        filterTimesheets({ status: "REJECTED" }, 0, 1),
+        filterTimesheets({}, 0, 10),
+        getUsers({ page: 0, size: 1 }),
+      ]);
 
       const getCount = (res) =>
         res.status === "fulfilled" ? (res.value.data?.totalPages ?? 0) : 0;
@@ -178,29 +186,44 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f0f4f8" }}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isMobile={isMobile}
+      />
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          ml: isMobile ? 0 : `${SIDEBAR_WIDTH}px`,
+          ml: 0,
           transition: "margin-left 0.25s ease",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Navbar onToggleSidebar={() => setSidebarOpen((p) => !p)} sidebarOpen={sidebarOpen} />
+        <Navbar
+          onToggleSidebar={() => setSidebarOpen((p) => !p)}
+          sidebarOpen={sidebarOpen}
+        />
 
-        <Box sx={{ pt: { xs: 8, sm: 9 }, px: { xs: 2, sm: 3 }, pb: 4, flexGrow: 1 }}>
+        <Box
+          sx={{
+            pt: { xs: 8, sm: 9 },
+            px: { xs: 1.5, sm: 2 },
+            pb: 4,
+            flexGrow: 1,
+          }}
+        >
           {/* Welcome banner */}
           <Box
             sx={{
               mb: 3,
               p: 3,
               borderRadius: 3,
-              background: "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
+              background:
+                "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
               color: "#fff",
               boxShadow: "0 8px 32px rgba(26,35,126,0.25)",
               display: "flex",
@@ -214,7 +237,7 @@ const Dashboard = () => {
               <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.8 }} />
               <Box>
                 <Typography variant="h6" fontWeight={700}>
-                  Welcome back, {user?.username || user?.email || "Admin"}! 
+                  Welcome back, {user?.username || user?.email || "Admin"}!
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.25 }}>
                   Here's a real-time overview of all timesheets.
@@ -225,7 +248,10 @@ const Dashboard = () => {
               <IconButton
                 onClick={loadDashboard}
                 disabled={dataLoading}
-                sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { bgcolor: "rgba(255,255,255,0.12)" } }}
+                sx={{
+                  color: "rgba(255,255,255,0.8)",
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
+                }}
               >
                 <RefreshIcon />
               </IconButton>
@@ -233,7 +259,9 @@ const Dashboard = () => {
           </Box>
 
           {dataLoading && (
-            <LinearProgress sx={{ mb: 2, borderRadius: 1, bgcolor: "rgba(25,118,210,0.15)" }} />
+            <LinearProgress
+              sx={{ mb: 2, borderRadius: 1, bgcolor: "rgba(25,118,210,0.15)" }}
+            />
           )}
 
           {/* Stat Cards */}
@@ -330,100 +358,130 @@ const Dashboard = () => {
               </Box>
             </Box>
 
-            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 0 }}>
+            <TableContainer
+              component={Paper}
+              elevation={0}
+              sx={{ borderRadius: 0 }}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                    {["ID", "Employee", "Title", "Period", "Status", "Total Hrs", "Actions"].map(
-                      (h) => (
-                        <TableCell
-                          key={h}
-                          sx={{
-                            fontWeight: 700,
-                            color: "text.secondary",
-                            fontSize: 11,
-                            textTransform: "uppercase",
-                            letterSpacing: 0.5,
-                            py: 1.5,
-                          }}
-                        >
-                          {h}
-                        </TableCell>
-                      )
-                    )}
+                    {[
+                      "ID",
+                      "Employee",
+                      "Title",
+                      "Period",
+                      "Status",
+                      "Total Hrs",
+                      "Actions",
+                    ].map((h) => (
+                      <TableCell
+                        key={h}
+                        sx={{
+                          fontWeight: 700,
+                          color: "text.secondary",
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          py: 1.5,
+                        }}
+                      >
+                        {h}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {dataLoading
-                    ? [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          {[...Array(7)].map((__, j) => (
-                            <TableCell key={j}>
-                              <Skeleton variant="text" width="80%" />
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    : recentTimesheets.length === 0
-                    ? (
-                        <TableRow>
-                          <TableCell colSpan={7} sx={{ textAlign: "center", py: 6 }}>
-                            <Typography variant="body2" color="text.disabled">
-                              No timesheets found.
-                            </Typography>
+                  {dataLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={i}>
+                        {[...Array(7)].map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton variant="text" width="80%" />
                           </TableCell>
-                        </TableRow>
-                      )
-                    : recentTimesheets.map((ts) => (
-                        <TableRow
-                          key={ts.id}
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : recentTimesheets.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        sx={{ textAlign: "center", py: 6 }}
+                      >
+                        <Typography variant="body2" color="text.disabled">
+                          No timesheets found.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recentTimesheets.map((ts) => (
+                      <TableRow
+                        key={ts.id}
+                        sx={{
+                          "&:hover": { bgcolor: "#f0f7ff" },
+                          transition: "background 0.15s ease",
+                        }}
+                      >
+                        <TableCell
                           sx={{
-                            "&:hover": { bgcolor: "#f0f7ff" },
-                            transition: "background 0.15s ease",
+                            color: "text.disabled",
+                            fontFamily: "monospace",
+                            fontSize: 12,
                           }}
                         >
-                          <TableCell
-                            sx={{ color: "text.disabled", fontFamily: "monospace", fontSize: 12 }}
-                          >
-                            #{ts.id}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>
-                            {ts.username || "-"}
-                          </TableCell>
-                          <TableCell sx={{ maxWidth: 160 }}>
-                            <Typography variant="body2" noWrap>
-                              {ts.title || `Timesheet #${ts.id}`}
-                            </Typography>
-                          </TableCell>
-                          <TableCell sx={{ whiteSpace: "nowrap", fontSize: 12, color: "text.secondary" }}>
-                            {formatDate(ts.periodStart)} {"to"} {formatDate(ts.periodEnd)}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={ts.status} />
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={`${Number(ts.totalHours || 0).toFixed(1)} hrs`}
+                          #{ts.id}
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>
+                          {ts.username || "-"}
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 160 }}>
+                          <Typography variant="body2" noWrap>
+                            {ts.title || `Timesheet #${ts.id}`}
+                          </Typography>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            whiteSpace: "nowrap",
+                            fontSize: 12,
+                            color: "text.secondary",
+                          }}
+                        >
+                          {formatDate(ts.periodStart)} {"to"}{" "}
+                          {formatDate(ts.periodEnd)}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={ts.status} />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={`${Number(ts.totalHours || 0).toFixed(1)} hrs`}
+                            size="small"
+                            sx={{
+                              bgcolor: "#ede7f6",
+                              color: "#6a1b9a",
+                              fontWeight: 700,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title="Review timesheet">
+                            <IconButton
                               size="small"
-                              sx={{ bgcolor: "#ede7f6", color: "#6a1b9a", fontWeight: 700 }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Tooltip title="Review timesheet">
-                              <IconButton
-                                size="small"
-                                onClick={() => navigate(`/manager/timesheets/${ts.id}`)}
-                                sx={{
-                                  color: "#3949ab",
-                                  "&:hover": { bgcolor: "rgba(57,73,171,0.08)" },
-                                }}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                              onClick={() =>
+                                navigate(`/manager/timesheets/${ts.id}`)
+                              }
+                              sx={{
+                                color: "#3949ab",
+                                "&:hover": { bgcolor: "rgba(57,73,171,0.08)" },
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>

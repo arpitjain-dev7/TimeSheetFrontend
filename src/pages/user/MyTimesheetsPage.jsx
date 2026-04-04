@@ -45,7 +45,7 @@ const MyTimesheetsPage = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: isMobile ? 0 : `${SIDEBAR_WIDTH}px`,
+          ml: 0,
           transition: "margin-left 0.25s ease",
           minHeight: "100vh",
           display: "flex",
@@ -60,7 +60,7 @@ const MyTimesheetsPage = () => {
         <Box
           sx={{
             pt: { xs: 8, sm: 9 },
-            px: { xs: 2, sm: 3 },
+            px: { xs: 1.5, sm: 2 },
             pb: 4,
             flexGrow: 1,
           }}

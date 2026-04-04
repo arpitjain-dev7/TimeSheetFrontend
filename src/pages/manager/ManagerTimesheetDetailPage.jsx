@@ -77,11 +77,19 @@ const MetaCard = ({ icon, label, value, highlight }) => (
         variant="caption"
         color="text.disabled"
         fontWeight={600}
-        sx={{ textTransform: "uppercase", letterSpacing: 0.5, display: "block" }}
+        sx={{
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+          display: "block",
+        }}
       >
         {label}
       </Typography>
-      <Typography variant="body2" fontWeight={highlight ? 700 : 500} color={highlight ? "#1a237e" : "text.primary"}>
+      <Typography
+        variant="body2"
+        fontWeight={highlight ? 700 : 500}
+        color={highlight ? "#1a237e" : "text.primary"}
+      >
         {value}
       </Typography>
     </Box>
@@ -102,7 +110,9 @@ const ManagerTimesheetDetailPage = () => {
 
   const SIDEBAR_WIDTH = sidebarOpen ? 240 : 72;
 
-  useEffect(() => { setSidebarOpen(!isMobile); }, [isMobile]);
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const load = async () => {
     setLoading(true);
@@ -117,7 +127,9 @@ const ManagerTimesheetDetailPage = () => {
     }
   };
 
-  useEffect(() => { load(); }, [id]); // eslint-disable-line
+  useEffect(() => {
+    load();
+  }, [id]); // eslint-disable-line
 
   const handleApprove = async () => {
     setApprovingId(id);
@@ -137,27 +149,46 @@ const ManagerTimesheetDetailPage = () => {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f0f4f8" }}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isMobile={isMobile}
+      />
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          ml: isMobile ? 0 : `${SIDEBAR_WIDTH}px`,
+          ml: 0,
           transition: "margin-left 0.25s ease",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Navbar onToggleSidebar={() => setSidebarOpen((p) => !p)} sidebarOpen={sidebarOpen} />
+        <Navbar
+          onToggleSidebar={() => setSidebarOpen((p) => !p)}
+          sidebarOpen={sidebarOpen}
+        />
 
-        <Box sx={{ pt: { xs: 8, sm: 9 }, px: { xs: 2, sm: 3 }, pb: 4, flexGrow: 1 }}>
+        <Box
+          sx={{
+            pt: { xs: 8, sm: 9 },
+            px: { xs: 1.5, sm: 2 },
+            pb: 4,
+            flexGrow: 1,
+          }}
+        >
           {/* Back button */}
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate("/manager/timesheets")}
-            sx={{ mb: 2.5, borderRadius: 2, color: "text.secondary", textTransform: "none" }}
+            sx={{
+              mb: 2.5,
+              borderRadius: 2,
+              color: "text.secondary",
+              textTransform: "none",
+            }}
           >
             Back to Team Timesheets
           </Button>
@@ -182,7 +213,8 @@ const ManagerTimesheetDetailPage = () => {
                 {/* Gradient banner */}
                 <Box
                   sx={{
-                    background: "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
+                    background:
+                      "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
                     px: 3,
                     py: 2.5,
                     display: "flex",
@@ -207,10 +239,18 @@ const ManagerTimesheetDetailPage = () => {
                       <AssignmentIcon sx={{ color: "#fff", fontSize: 26 }} />
                     </Box>
                     <Box>
-                      <Typography variant="h6" fontWeight={700} color="#fff" lineHeight={1.25}>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        color="#fff"
+                        lineHeight={1.25}
+                      >
                         {timesheet.title || `Timesheet #${timesheet.id}`}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "rgba(255,255,255,0.75)" }}
+                      >
                         Reviewing timesheet #{timesheet.id}
                       </Typography>
                     </Box>
@@ -224,7 +264,13 @@ const ManagerTimesheetDetailPage = () => {
                           disabled={!!approvingId}
                           variant="contained"
                           size="small"
-                          startIcon={approvingId ? <CircularProgress size={12} color="inherit" /> : <CheckCircleIcon />}
+                          startIcon={
+                            approvingId ? (
+                              <CircularProgress size={12} color="inherit" />
+                            ) : (
+                              <CheckCircleIcon />
+                            )
+                          }
                           sx={{
                             borderRadius: 2,
                             fontWeight: 700,
@@ -264,21 +310,31 @@ const ManagerTimesheetDetailPage = () => {
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6} md={3}>
                       <MetaCard
-                        icon={<PersonIcon sx={{ fontSize: 18, color: "#546e7a" }} />}
+                        icon={
+                          <PersonIcon sx={{ fontSize: 18, color: "#546e7a" }} />
+                        }
                         label="Employee"
                         value={timesheet.username || "Unknown"}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <MetaCard
-                        icon={<CalendarTodayIcon sx={{ fontSize: 18, color: "#546e7a" }} />}
+                        icon={
+                          <CalendarTodayIcon
+                            sx={{ fontSize: 18, color: "#546e7a" }}
+                          />
+                        }
                         label="Period"
                         value={`${formatDate(timesheet.periodStart)} - ${formatDate(timesheet.periodEnd)}`}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <MetaCard
-                        icon={<AccessTimeIcon sx={{ fontSize: 18, color: "#1a237e" }} />}
+                        icon={
+                          <AccessTimeIcon
+                            sx={{ fontSize: 18, color: "#1a237e" }}
+                          />
+                        }
                         label="Total Hours"
                         value={`${Number(timesheet.totalHours || 0).toFixed(1)} hrs`}
                         highlight
@@ -286,9 +342,17 @@ const ManagerTimesheetDetailPage = () => {
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <MetaCard
-                        icon={<AssignmentIcon sx={{ fontSize: 18, color: "#546e7a" }} />}
+                        icon={
+                          <AssignmentIcon
+                            sx={{ fontSize: 18, color: "#546e7a" }}
+                          />
+                        }
                         label="Submitted At"
-                        value={timesheet.submittedAt ? formatDate(timesheet.submittedAt) : "Not submitted"}
+                        value={
+                          timesheet.submittedAt
+                            ? formatDate(timesheet.submittedAt)
+                            : "Not submitted"
+                        }
                       />
                     </Grid>
                   </Grid>
@@ -323,7 +387,11 @@ const ManagerTimesheetDetailPage = () => {
                   <Chip
                     label={`${entries.length} ${entries.length === 1 ? "entry" : "entries"}`}
                     size="small"
-                    sx={{ bgcolor: "rgba(26,35,126,0.08)", color: "#1a237e", fontWeight: 700 }}
+                    sx={{
+                      bgcolor: "rgba(26,35,126,0.08)",
+                      color: "#1a237e",
+                      fontWeight: 700,
+                    }}
                   />
                 </Box>
 
@@ -338,7 +406,13 @@ const ManagerTimesheetDetailPage = () => {
                     <Table size="small">
                       <TableHead sx={{ bgcolor: "grey.50" }}>
                         <TableRow>
-                          {["Project", "Code", "Date", "Hours", "Description"].map((h) => (
+                          {[
+                            "Project",
+                            "Code",
+                            "Date",
+                            "Hours",
+                            "Description",
+                          ].map((h) => (
                             <TableCell
                               key={h}
                               sx={{
@@ -357,14 +431,29 @@ const ManagerTimesheetDetailPage = () => {
                       <TableBody>
                         {entries.map((entry) => {
                           const formattedDate = entry.workDate
-                            ? (() => { try { return format(parseISO(entry.workDate), "dd MMM yyyy"); } catch { return entry.workDate; } })()
+                            ? (() => {
+                                try {
+                                  return format(
+                                    parseISO(entry.workDate),
+                                    "dd MMM yyyy",
+                                  );
+                                } catch {
+                                  return entry.workDate;
+                                }
+                              })()
                             : "Not set";
                           return (
                             <TableRow key={entry.id} hover>
                               <TableCell sx={{ fontWeight: 500 }}>
                                 {entry.projectName || "Not set"}
                               </TableCell>
-                              <TableCell sx={{ color: "text.secondary", fontFamily: "monospace", fontSize: 12 }}>
+                              <TableCell
+                                sx={{
+                                  color: "text.secondary",
+                                  fontFamily: "monospace",
+                                  fontSize: 12,
+                                }}
+                              >
                                 {entry.projectCode || "Not set"}
                               </TableCell>
                               <TableCell>{formattedDate}</TableCell>
@@ -380,8 +469,14 @@ const ManagerTimesheetDetailPage = () => {
                                   }}
                                 />
                               </TableCell>
-                              <TableCell sx={{ color: "text.secondary", maxWidth: 240 }}>
-                                <Typography variant="body2" noWrap title={entry.description}>
+                              <TableCell
+                                sx={{ color: "text.secondary", maxWidth: 240 }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  noWrap
+                                  title={entry.description}
+                                >
                                   {entry.description || "-"}
                                 </Typography>
                               </TableCell>
@@ -397,15 +492,27 @@ const ManagerTimesheetDetailPage = () => {
                 {entries.length > 0 && (
                   <>
                     <Divider />
-                    <Box sx={{ px: 3, py: 1.5, display: "flex", justifyContent: "flex-end" }}>
+                    <Box
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        display: "flex",
+                        justifyContent: "flex-end",
+                      }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         Total:{" "}
-                        <Typography component="span" fontWeight={700} color="#1a237e">
+                        <Typography
+                          component="span"
+                          fontWeight={700}
+                          color="#1a237e"
+                        >
                           {Number(timesheet.totalHours || 0).toFixed(1)} hrs
                         </Typography>{" "}
                         across{" "}
                         <Typography component="span" fontWeight={600}>
-                          {entries.length} {entries.length === 1 ? "entry" : "entries"}
+                          {entries.length}{" "}
+                          {entries.length === 1 ? "entry" : "entries"}
                         </Typography>
                       </Typography>
                     </Box>
