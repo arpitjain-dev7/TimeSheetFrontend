@@ -29,11 +29,6 @@ const DRAWER_COLLAPSED = 72;
 const navItems = [
   { label: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
   {
-    label: "Timesheets",
-    icon: <AccessTimeIcon />,
-    path: "/manager/timesheets",
-  },
-  {
     label: "Approved",
     icon: <CheckCircleIcon />,
     path: "/manager/timesheets?status=APPROVED",
@@ -105,7 +100,9 @@ const Sidebar = ({ open, onClose, isMobile }) => {
       <List sx={{ mt: 1, px: open ? 1 : 0.5, flexGrow: 1 }}>
         {navItems.map(({ label, icon, path }) => {
           const currentFull = location.pathname + location.search;
-          const active = currentFull === path || location.pathname === path && !path.includes("?");
+          const active =
+            currentFull === path ||
+            (location.pathname === path && !path.includes("?"));
           return (
             <Tooltip
               key={label}
