@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   Box,
@@ -26,6 +27,7 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
@@ -65,6 +67,7 @@ const ManagerTimesheetsPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState({});
   const [rejectTarget, setRejectTarget] = useState(null);
@@ -412,54 +415,69 @@ const ManagerTimesheetsPage = () => {
                             : "Not set"}
                         </TableCell>
                         <TableCell>
-                          {ts.status === "SUBMITTED" ? (
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                              <Button
-                                onClick={() => handleApprove(ts.id)}
-                                disabled={approvingId === ts.id}
-                                size="small"
-                                variant="outlined"
-                                color="success"
-                                startIcon={
-                                  approvingId === ts.id ? (
-                                    <CircularProgress
-                                      size={12}
-                                      color="inherit"
-                                    />
-                                  ) : (
-                                    <CheckCircleIcon fontSize="small" />
-                                  )
-                                }
-                                sx={{
-                                  borderRadius: 1.5,
-                                  textTransform: "none",
-                                  fontWeight: 700,
-                                  fontSize: 12,
-                                }}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                onClick={() => setRejectTarget(ts)}
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                startIcon={<CancelIcon fontSize="small" />}
-                                sx={{
-                                  borderRadius: 1.5,
-                                  textTransform: "none",
-                                  fontWeight: 700,
-                                  fontSize: 12,
-                                }}
-                              >
-                                Reject
-                              </Button>
-                            </Box>
-                          ) : (
-                            <Typography variant="caption" color="text.disabled">
-                              Not set
-                            </Typography>
-                          )}
+                          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                            {/* Review – always visible */}
+                            <Button
+                              onClick={() => navigate(`/manager/timesheets/${ts.id}`)}
+                              size="small"
+                              variant="outlined"
+                              startIcon={<VisibilityIcon fontSize="small" />}
+                              sx={{
+                                borderRadius: 1.5,
+                                textTransform: "none",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                borderColor: "#3949ab",
+                                color: "#3949ab",
+                                "&:hover": { bgcolor: "rgba(57,73,171,0.06)", borderColor: "#1a237e" },
+                              }}
+                            >
+                              Review
+                            </Button>
+
+                            {/* Approve / Reject – only for SUBMITTED */}
+                            {ts.status === "SUBMITTED" && (
+                              <>
+                                <Button
+                                  onClick={() => handleApprove(ts.id)}
+                                  disabled={approvingId === ts.id}
+                                  size="small"
+                                  variant="outlined"
+                                  color="success"
+                                  startIcon={
+                                    approvingId === ts.id ? (
+                                      <CircularProgress size={12} color="inherit" />
+                                    ) : (
+                                      <CheckCircleIcon fontSize="small" />
+                                    )
+                                  }
+                                  sx={{
+                                    borderRadius: 1.5,
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  onClick={() => setRejectTarget(ts)}
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  startIcon={<CancelIcon fontSize="small" />}
+                                  sx={{
+                                    borderRadius: 1.5,
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}

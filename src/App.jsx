@@ -13,6 +13,7 @@ import Projects from "./pages/Projects";
 import MyTimesheetsPage from "./pages/user/MyTimesheetsPage";
 import TimesheetDetailPage from "./pages/user/TimesheetDetailPage";
 import ManagerTimesheetsPage from "./pages/manager/ManagerTimesheetsPage";
+import ManagerTimesheetDetailPage from "./pages/manager/ManagerTimesheetDetailPage";
 
 /**
  * Renders the correct dashboard based on the logged-in user's role.
@@ -115,6 +116,14 @@ function App() {
             element={
               <AdminRoute>
                 <ManagerTimesheetsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/manager/timesheets/:id"
+            element={
+              <AdminRoute>
+                <ManagerTimesheetDetailPage />
               </AdminRoute>
             }
           />
