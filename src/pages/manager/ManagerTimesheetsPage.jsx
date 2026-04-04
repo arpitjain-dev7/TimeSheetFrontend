@@ -74,7 +74,7 @@ const ManagerTimesheetsPage = () => {
   const statusFromUrl = searchParams.get("status") || "";
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS, status: statusFromUrl });
   const [appliedFilters, setAppliedFilters] = useState(
-    statusFromUrl ? { ...EMPTY_FILTERS, status: statusFromUrl } : {}
+    statusFromUrl ? { ...EMPTY_FILTERS, status: statusFromUrl } : {},
   );
   const [rejectTarget, setRejectTarget] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
@@ -110,11 +110,15 @@ const ManagerTimesheetsPage = () => {
     }
   };
 
-  // Fetch on mount using any pre-applied status filter from URL
+  // Re-run whenever the ?status= query param changes (sidebar navigation)
   useEffect(() => {
-    const initFilters = statusFromUrl ? { ...EMPTY_FILTERS, status: statusFromUrl } : {};
-    fetchTimesheets(0, initFilters);
-  }, []); // eslint-disable-line
+    const newStatus = searchParams.get("status") || "";
+    const newFilters = newStatus ? { ...EMPTY_FILTERS, status: newStatus } : {};
+    setFilters({ ...EMPTY_FILTERS, status: newStatus });
+    setAppliedFilters(newFilters);
+    setCurrentPage(0);
+    fetchTimesheets(0, newFilters);
+  }, [searchParams]); // eslint-disable-line
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
@@ -195,15 +199,15 @@ const ManagerTimesheetsPage = () => {
               {statusFromUrl === "APPROVED"
                 ? "Approved Timesheets"
                 : statusFromUrl === "SUBMITTED"
-                ? "Pending Timesheets"
-                : "Timesheet Management"}
+                  ? "Pending Timesheets"
+                  : "Timesheet Management"}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.25 }}>
               {statusFromUrl === "APPROVED"
                 ? "All timesheets that have been approved"
                 : statusFromUrl === "SUBMITTED"
-                ? "All timesheets awaiting your review and approval"
-                : "Review, approve, and reject team timesheets"}
+                  ? "All timesheets awaiting your review and approval"
+                  : "Review, approve, and reject team timesheets"}
             </Typography>
           </Box>
 
