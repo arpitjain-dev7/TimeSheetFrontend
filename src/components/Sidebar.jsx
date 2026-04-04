@@ -18,6 +18,8 @@ import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PeopleIcon from "@mui/icons-material/People";
 import FolderIcon from "@mui/icons-material/Folder";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -156,6 +158,89 @@ const Sidebar = ({ open, onClose, isMobile }) => {
           );
         })}
 
+        {/* User-only: My Timesheets */}
+        {!isAdmin &&
+          (() => {
+            const tsPath = "/timesheets";
+            const tsActive = location.pathname.startsWith("/timesheets");
+            return (
+              <>
+                {open && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      px: 2,
+                      pt: 1.5,
+                      pb: 0.5,
+                      display: "block",
+                      color: "rgba(255,255,255,0.35)",
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                      fontSize: 10,
+                    }}
+                  >
+                    Timesheets
+                  </Typography>
+                )}
+                <Tooltip
+                  title={!open ? "My Timesheets" : ""}
+                  placement="right"
+                  arrow
+                >
+                  <ListItem disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                      onClick={() => {
+                        navigate(tsPath);
+                        if (isMobile) onClose();
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1.2,
+                        px: open ? 2 : 1.5,
+                        justifyContent: open ? "flex-start" : "center",
+                        background: tsActive
+                          ? "linear-gradient(90deg,rgba(66,165,245,0.25),rgba(66,165,245,0.08))"
+                          : "transparent",
+                        borderLeft: tsActive
+                          ? "3px solid #42a5f5"
+                          : "3px solid transparent",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))",
+                        },
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          color: tsActive
+                            ? "#90caf9"
+                            : "rgba(255,255,255,0.65)",
+                          minWidth: open ? 40 : "auto",
+                        }}
+                      >
+                        <AssignmentIcon />
+                      </ListItemIcon>
+                      {open && (
+                        <ListItemText
+                          primary="My Timesheets"
+                          primaryTypographyProps={{
+                            fontSize: 14,
+                            fontWeight: tsActive ? 700 : 400,
+                            color: tsActive
+                              ? "#e3f2fd"
+                              : "rgba(255,255,255,0.8)",
+                          }}
+                        />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
+                </Tooltip>
+              </>
+            );
+          })()}
+
         {/* Admin-only: User Management */}
         {isAdmin &&
           (() => {
@@ -283,6 +368,68 @@ const Sidebar = ({ open, onClose, isMobile }) => {
                                 fontSize: 14,
                                 fontWeight: projActive ? 700 : 400,
                                 color: projActive
+                                  ? "#e3f2fd"
+                                  : "rgba(255,255,255,0.8)",
+                              }}
+                            />
+                          )}
+                        </ListItemButton>
+                      </ListItem>
+                    </Tooltip>
+                  );
+                })()}
+
+                {/* Admin: Team Timesheets */}
+                {(() => {
+                  const mgrPath = "/manager/timesheets";
+                  const mgrActive = location.pathname === mgrPath;
+                  return (
+                    <Tooltip
+                      title={!open ? "Team Timesheets" : ""}
+                      placement="right"
+                      arrow
+                    >
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemButton
+                          onClick={() => {
+                            navigate(mgrPath);
+                            if (isMobile) onClose();
+                          }}
+                          sx={{
+                            borderRadius: 2,
+                            py: 1.2,
+                            px: open ? 2 : 1.5,
+                            justifyContent: open ? "flex-start" : "center",
+                            background: mgrActive
+                              ? "linear-gradient(90deg,rgba(66,165,245,0.25),rgba(66,165,245,0.08))"
+                              : "transparent",
+                            borderLeft: mgrActive
+                              ? "3px solid #42a5f5"
+                              : "3px solid transparent",
+                            "&:hover": {
+                              background:
+                                "linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <ListItemIcon
+                            sx={{
+                              color: mgrActive
+                                ? "#90caf9"
+                                : "rgba(255,255,255,0.65)",
+                              minWidth: open ? 40 : "auto",
+                            }}
+                          >
+                            <SupervisorAccountIcon />
+                          </ListItemIcon>
+                          {open && (
+                            <ListItemText
+                              primary="Team Timesheets"
+                              primaryTypographyProps={{
+                                fontSize: 14,
+                                fontWeight: mgrActive ? 700 : 400,
+                                color: mgrActive
                                   ? "#e3f2fd"
                                   : "rgba(255,255,255,0.8)",
                               }}

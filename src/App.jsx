@@ -1,12 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import ProtectedRoute, { AdminRoute } from "./components/ProtectedRoute";
+import ProtectedRoute, {
+  AdminRoute,
+  UserRoute,
+} from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import UserDashboard from "./pages/UserDashboard";
 import UserManagement from "./pages/UserManagement";
 import Projects from "./pages/Projects";
+import MyTimesheetsPage from "./pages/user/MyTimesheetsPage";
+import TimesheetDetailPage from "./pages/user/TimesheetDetailPage";
+import ManagerTimesheetsPage from "./pages/manager/ManagerTimesheetsPage";
 
 /**
  * Renders the correct dashboard based on the logged-in user's role.
@@ -81,6 +87,34 @@ function App() {
             element={
               <AdminRoute>
                 <Projects />
+              </AdminRoute>
+            }
+          />
+
+          {/* User-only: Timesheet list and detail */}
+          <Route
+            path="/timesheets"
+            element={
+              <UserRoute>
+                <MyTimesheetsPage />
+              </UserRoute>
+            }
+          />
+          <Route
+            path="/timesheets/:id"
+            element={
+              <UserRoute>
+                <TimesheetDetailPage />
+              </UserRoute>
+            }
+          />
+
+          {/* Manager / Admin: all timesheets management */}
+          <Route
+            path="/manager/timesheets"
+            element={
+              <AdminRoute>
+                <ManagerTimesheetsPage />
               </AdminRoute>
             }
           />

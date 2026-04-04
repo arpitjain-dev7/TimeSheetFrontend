@@ -32,4 +32,20 @@ export const AdminRoute = ({ children }) => {
   return children;
 };
 
+/**
+ * UserRoute – allows access only to users with ROLE_USER.
+ * Unauthenticated users are sent to /login.
+ * Managers / Admins are redirected to /dashboard.
+ */
+export const UserRoute = ({ children }) => {
+  const { user, accessToken, loading } = useAuth();
+
+  if (loading) return <Loader />;
+  if (!accessToken) return <Navigate to="/login" replace />;
+  const roles = user?.roles || [];
+  if (!roles.includes("ROLE_USER")) return <Navigate to="/dashboard" replace />;
+
+  return children;
+};
+
 export default ProtectedRoute;
