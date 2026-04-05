@@ -51,6 +51,12 @@ api.interceptors.response.use(
 export const loginUser = (credentials) => api.post('/auth/login', credentials);
 
 /**
+ * Send forgot-password email
+ * @param {{ email: string }} data
+ */
+export const forgotPassword = (data) => api.post('/auth/forgot-password', data);
+
+/**
  * Register a new user (admin action)
  * @param {{ firstName, lastName, username, email, password, gender, location, designation, managerEmail, typeOfEmployment, role }} userData
  */
