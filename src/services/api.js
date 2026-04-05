@@ -57,6 +57,18 @@ export const loginUser = (credentials) => api.post('/auth/login', credentials);
 export const forgotPassword = (data) => api.post('/auth/forgot-password', data);
 
 /**
+ * Verify the 6-digit OTP — returns { resetToken }
+ * @param {{ email: string, otp: string }} data
+ */
+export const verifyOtp = (data) => api.post('/auth/verify-otp', data);
+
+/**
+ * Reset password using the token received after OTP verification
+ * @param {{ resetToken: string, newPassword: string }} data
+ */
+export const resetPassword = (data) => api.post('/auth/reset-password', data);
+
+/**
  * Register a new user (admin action)
  * @param {{ firstName, lastName, username, email, password, gender, location, designation, managerEmail, typeOfEmployment, role }} userData
  */

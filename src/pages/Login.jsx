@@ -5,23 +5,17 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  InputAdornment,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import EmailIcon from "@mui/icons-material/Email";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser, forgotPassword } from "../services/api";
+import { loginUser } from "../services/api";
 import FormInput from "../components/FormInput";
+import ForgotPasswordDialog from "../components/forgotPassword/ForgotPasswordDialog";
 import toast from "react-hot-toast";
 
 // High-quality Unsplash background for the image panel
@@ -41,42 +35,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  // Forgot password dialog state
+  // Forgot password dialog
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotEmailError, setForgotEmailError] = useState("");
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
-
-  const handleForgotOpen = () => {
-    setForgotEmail("");
-    setForgotEmailError("");
-    setForgotSent(false);
-    setForgotOpen(true);
-  };
-
-  const handleForgotSubmit = async () => {
-    if (!forgotEmail.trim()) {
-      setForgotEmailError("Email is required");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) {
-      setForgotEmailError("Enter a valid email address");
-      return;
-    }
-    setForgotLoading(true);
-    try {
-      await forgotPassword({ email: forgotEmail });
-      setForgotSent(true);
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        "Failed to send reset email. Please try again.";
-      setForgotEmailError(msg);
-    } finally {
-      setForgotLoading(false);
-    }
-  };
+  const handleForgotOpen = () => setForgotOpen(true);
 
   // Controlled input handler
   const handleChange = (e) => {
@@ -423,122 +384,10 @@ const Login = () => {
       </Box>
 
       {/* ── Forgot Password Dialog ── */}
-      <Dialog
+      <ForgotPasswordDialog
         open={forgotOpen}
         onClose={() => setForgotOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
-      >
-        {/* Gradient header */}
-        <Box
-          sx={{
-            background:
-              "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
-            px: 3,
-            py: 2.5,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-          }}
-        >
-          <LockOutlinedIcon
-            sx={{ color: "rgba(255,255,255,0.85)", fontSize: 26 }}
-          />
-          <Box>
-            <Typography variant="h6" fontWeight={700} color="#fff">
-              Forgot Password
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: "rgba(255,255,255,0.7)" }}
-            >
-              We'll send an OTP to your email
-            </Typography>
-          </Box>
-        </Box>
-
-        <DialogContent sx={{ pt: 3, pb: 1 }}>
-          {forgotSent ? (
-            <Box sx={{ textAlign: "center", py: 2 }}>
-              <CheckCircleOutlineIcon
-                sx={{ fontSize: 52, color: "#43a047", mb: 1.5 }}
-              />
-              <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                Email sent!
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                An OTP has been sent to <strong>{forgotEmail}</strong>. Please
-                check your inbox.
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Enter the email address associated with your account and we'll
-                send you an OTP to reset your password.
-              </Typography>
-              <TextField
-                label="Email address"
-                type="email"
-                value={forgotEmail}
-                onChange={(e) => {
-                  setForgotEmail(e.target.value);
-                  setForgotEmailError("");
-                }}
-                error={!!forgotEmailError}
-                helperText={forgotEmailError}
-                fullWidth
-                size="small"
-                autoFocus
-                InputLabelProps={{ shrink: true }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon
-                        sx={{ fontSize: 18, color: "text.disabled" }}
-                      />
-                    </InputAdornment>
-                  ),
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleForgotSubmit()}
-              />
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button
-            onClick={() => setForgotOpen(false)}
-            sx={{ borderRadius: 2, fontWeight: 600 }}
-          >
-            {forgotSent ? "Close" : "Cancel"}
-          </Button>
-          {!forgotSent && (
-            <Button
-              variant="contained"
-              onClick={handleForgotSubmit}
-              disabled={forgotLoading}
-              startIcon={
-                forgotLoading ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : null
-              }
-              sx={{
-                borderRadius: 2,
-                fontWeight: 700,
-                minWidth: 140,
-                background: "linear-gradient(90deg,#1976d2,#42a5f5)",
-                "&:hover": {
-                  background: "linear-gradient(90deg,#1565c0,#2196f3)",
-                },
-              }}
-            >
-              {forgotLoading ? "Sending…" : "Send OTP"}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      />
     </Box>
   );
 };
