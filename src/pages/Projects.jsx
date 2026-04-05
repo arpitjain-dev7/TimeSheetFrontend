@@ -41,12 +41,17 @@ import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import SearchIcon from "@mui/icons-material/Search";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import InfoIcon from "@mui/icons-material/Info";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import {
   createProject,
   getProjects,
+  getProjectById,
+  getProjectAssignedUsers,
   updateProject,
   getUsers,
   assignProject,
@@ -398,6 +403,282 @@ const MiniRoleChip = ({ role }) => {
   );
 };
 
+// ─── View Project Dialog ──────────────────────────────────────────────────────
+const ViewProjectDialog = ({ open, project, onClose }) => {
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !project) return;
+    setAssignedUsers([]);
+    setTotalUsers(0);
+    setLoading(true);
+    getProjectAssignedUsers(project.id)
+      .then((res) => {
+        const data = res.data;
+        setAssignedUsers(data.users || []);
+        setTotalUsers(data.totalUsers ?? (data.users?.length || 0));
+      })
+      .catch(() => toast.error("Failed to load project members."))
+      .finally(() => setLoading(false));
+  }, [open, project]);
+
+  if (!project) return null;
+
+  const status =
+    project.active !== undefined
+      ? project.active
+        ? "Active"
+        : "Inactive"
+      : project.status || "Active";
+
+  const AVATAR_COLORS = ["#1565c0", "#6a1b9a", "#2e7d32", "#e65100", "#4527a0"];
+  const avatarColor = (u) => AVATAR_COLORS[(u.id || 0) % AVATAR_COLORS.length];
+  const initials = (u) =>
+    `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase().trim() ||
+    u.username?.[0]?.toUpperCase() ||
+    "?";
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+    >
+      {/* Gradient header */}
+      <Box
+        sx={{
+          background:
+            "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
+          px: 3,
+          py: 2.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 44,
+            height: 44,
+            bgcolor: "rgba(255,255,255,0.18)",
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#fff",
+          }}
+        >
+          {project.name?.[0]?.toUpperCase()}
+        </Avatar>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" fontWeight={700} color="#fff">
+            {project.name}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
+            Project Details
+          </Typography>
+        </Box>
+        <StatusChip status={status} />
+      </Box>
+
+      <DialogContent sx={{ p: 0 }}>
+        {/* Static project info */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          {/* Description */}
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            <InfoIcon
+              sx={{ color: "#1976d2", fontSize: 20, mt: 0.2, flexShrink: 0 }}
+            />
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                fontWeight={700}
+                sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+              >
+                Description
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.25 }}>
+                {project.description || "—"}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Dates */}
+          <Box sx={{ display: "flex", gap: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, flex: 1 }}>
+              <CalendarTodayIcon
+                sx={{ color: "#1976d2", fontSize: 18, mt: 0.3, flexShrink: 0 }}
+              />
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  fontWeight={700}
+                  sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
+                  Start Date
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.25 }}>
+                  {project.startDate || project.createdAt?.split("T")[0] || "—"}
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1.5, flex: 1 }}>
+              <CalendarTodayIcon
+                sx={{ color: "#e65100", fontSize: 18, mt: 0.3, flexShrink: 0 }}
+              />
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  fontWeight={700}
+                  sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
+                  End Date
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.25 }}>
+                  {project.endDate || "—"}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider />
+
+        {/* Assigned users */}
+        <Box sx={{ px: 3, pt: 2, pb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <PeopleAltIcon sx={{ color: "#1976d2", fontSize: 18 }} />
+            <Typography
+              variant="subtitle2"
+              fontWeight={700}
+              color="text.primary"
+            >
+              Assigned Members
+            </Typography>
+            <Chip
+              label={totalUsers}
+              size="small"
+              sx={{
+                bgcolor: "#e3f2fd",
+                color: "#1565c0",
+                fontWeight: 700,
+                height: 20,
+                fontSize: 11,
+              }}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ maxHeight: 280, overflowY: "auto" }}>
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : assignedUsers.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 5, color: "text.disabled" }}>
+              <PeopleAltIcon sx={{ fontSize: 36, opacity: 0.3, mb: 1 }} />
+              <Typography variant="body2">No users assigned yet</Typography>
+            </Box>
+          ) : (
+            <List disablePadding>
+              {assignedUsers.map((u, idx) => {
+                const role = Array.isArray(u.roles) ? u.roles[0] : u.role;
+                return (
+                  <ListItem
+                    key={u.id || idx}
+                    sx={{
+                      px: 3,
+                      py: 1.25,
+                      borderBottom:
+                        idx < assignedUsers.length - 1
+                          ? "1px solid rgba(0,0,0,0.05)"
+                          : "none",
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        src={
+                          u.photoUrl
+                            ? `http://localhost:8080/${u.photoUrl}`
+                            : undefined
+                        }
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: avatarColor(u),
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {!u.photoUrl && initials(u)}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {u.firstName} {u.lastName}
+                          </Typography>
+                          {role && <MiniRoleChip role={role} />}
+                        </Box>
+                      }
+                      secondary={
+                        <Box
+                          component="span"
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.25,
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            @{u.username}&nbsp;&bull;&nbsp;{u.email}
+                          </Typography>
+                          {u.designation && (
+                            <Typography variant="caption" color="text.disabled">
+                              {u.designation}
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                );
+              })}
+            </List>
+          )}
+        </Box>
+      </DialogContent>
+
+      <Divider />
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 // ─── Assign Dialog ────────────────────────────────────────────────────────────
 const AssignDialog = ({ open, project, onClose }) => {
   const [users, setUsers] = useState([]);
@@ -703,6 +984,7 @@ const Projects = () => {
   const [assignTarget, setAssignTarget] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
+  const [viewTarget, setViewTarget] = useState(null);
 
   const SIDEBAR_WIDTH = sidebarOpen ? 240 : 72;
 
@@ -904,6 +1186,12 @@ const Projects = () => {
                         sx={{ fontWeight: 700, color: "#475569" }}
                         align="center"
                       >
+                        Members
+                      </TableCell>
+                      <TableCell
+                        sx={{ fontWeight: 700, color: "#475569" }}
+                        align="center"
+                      >
                         Actions
                       </TableCell>
                     </TableRow>
@@ -912,7 +1200,7 @@ const Projects = () => {
                   <TableBody>
                     {loading && (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                           <CircularProgress size={32} />
                         </TableCell>
                       </TableRow>
@@ -983,10 +1271,33 @@ const Projects = () => {
                           </TableCell>
 
                           <TableCell align="center">
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<VisibilityIcon fontSize="small" />}
+                              onClick={() => setViewTarget(p)}
+                              sx={{
+                                borderRadius: 2,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                textTransform: "none",
+                                borderColor: "#43a047",
+                                color: "#2e7d32",
+                                "&:hover": {
+                                  bgcolor: "rgba(76,175,80,0.06)",
+                                  borderColor: "#2e7d32",
+                                },
+                              }}
+                            >
+                              View
+                            </Button>
+                          </TableCell>
+
+                          <TableCell align="center">
                             <Box
                               sx={{
                                 display: "flex",
-                                gap: 1.5,
+                                gap: 1,
                                 justifyContent: "center",
                                 alignItems: "center",
                               }}
@@ -1100,6 +1411,13 @@ const Projects = () => {
         open={Boolean(assignTarget)}
         project={assignTarget}
         onClose={() => setAssignTarget(null)}
+      />
+
+      {/* View Project dialog */}
+      <ViewProjectDialog
+        open={Boolean(viewTarget)}
+        project={viewTarget}
+        onClose={() => setViewTarget(null)}
       />
     </Box>
   );

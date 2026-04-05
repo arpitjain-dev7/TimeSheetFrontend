@@ -26,17 +26,21 @@ import { useAuth } from "../context/AuthContext";
 const DRAWER_WIDTH = 240;
 const DRAWER_COLLAPSED = 72;
 
-const navItems = [
+const getNavItems = (isAdmin) => [
   { label: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
   {
     label: "Approved",
     icon: <CheckCircleIcon />,
-    path: "/manager/timesheets?status=APPROVED",
+    path: isAdmin
+      ? "/manager/timesheets?status=APPROVED"
+      : "/dashboard?status=APPROVED",
   },
   {
     label: "Pending",
     icon: <PendingActionsIcon />,
-    path: "/manager/timesheets?status=SUBMITTED",
+    path: isAdmin
+      ? "/manager/timesheets?status=SUBMITTED"
+      : "/dashboard?status=SUBMITTED",
   },
 ];
 
@@ -53,6 +57,8 @@ const Sidebar = ({ open, onClose, isMobile }) => {
   const isAdmin =
     user?.roles?.includes("ROLE_ADMIN") ||
     user?.roles?.includes("ROLE_MANAGER");
+
+  const navItems = getNavItems(isAdmin);
 
   const drawerContent = (
     <Box

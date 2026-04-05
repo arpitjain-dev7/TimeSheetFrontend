@@ -111,6 +111,26 @@ export const getProjects = ({ activeOnly = true, page = 0, size = 10, sortBy = '
 export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 
 /**
+ * Fetch a single project by id (includes assigned users)
+ * @param {number} id
+ */
+export const getProjectById = (id) => api.get(`/projects/${id}`);
+
+/**
+ * Fetch all users assigned to a project
+ * Response: { projectName, totalUsers, users[] }
+ * @param {number} id
+ */
+export const getProjectAssignedUsers = (id) => api.get(`/projects/${id}/users`);
+
+/**
+ * Fetch all projects assigned to a specific user (admin access)
+ * Response: [{ id, name, description, active, startDate, endDate, ... }]
+ * @param {number} userId
+ */
+export const getUserProjects = (userId) => api.get(`/projects/user/${userId}`);
+
+/**
  * Assign a project to one or more users
  * @param {{ projectId: number, userIds: number[] }} data
  */

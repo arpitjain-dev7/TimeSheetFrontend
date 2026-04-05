@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -49,6 +49,7 @@ const STATUS_OPTIONS = ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"];
 const UserDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -60,8 +61,14 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  // Filters
+  // Filters — driven by URL ?status= param
   const [filterStatus, setFilterStatus] = useState("");
+
+  // Sync filterStatus from URL when it changes
+  useEffect(() => {
+    const statusFromUrl = searchParams.get("status") || "";
+    setFilterStatus(statusFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);

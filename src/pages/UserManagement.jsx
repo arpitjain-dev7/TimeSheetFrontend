@@ -43,6 +43,8 @@ import {
   getUsers,
   updateUser,
   deleteUser,
+  getProjects,
+  getProjectAssignedUsers,
 } from "../services/api";
 import toast from "react-hot-toast";
 
@@ -635,6 +637,7 @@ const UserManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [userProjectsMap, setUserProjectsMap] = useState({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -644,8 +647,40 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
-      const res = await getUsers({ page: 0, size: 100 });
-      setUsers(res.data?.users || []);
+      // 1. Fetch all users
+      const usersRes = await getUsers({ page: 0, size: 100 });
+      const loadedUsers = usersRes.data?.users || [];
+      setUsers(loadedUsers);
+
+      // 2. Fetch all projects (no size limit)
+      const projRes = await getProjects({
+        activeOnly: false,
+        page: 0,
+        size: 200,
+      });
+      const allProjects = projRes.data?.projects || [];
+
+      // 3. For each project fetch its assigned users in parallel
+      const assignResults = await Promise.allSettled(
+        allProjects.map((p) => getProjectAssignedUsers(p.id)),
+      );
+
+      // 4. Build inverse map: { userId -> [project, ...] }
+      const map = {};
+      loadedUsers.forEach((u) => {
+        map[u.id] = [];
+      });
+      assignResults.forEach((result, idx) => {
+        if (result.status !== "fulfilled") return;
+        const project = allProjects[idx];
+        const users = result.value.data?.users || [];
+        users.forEach((u) => {
+          if (map[u.id] !== undefined) {
+            map[u.id].push(project);
+          }
+        });
+      });
+      setUserProjectsMap(map);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to load users.";
       toast.error(msg);
@@ -866,6 +901,9 @@ const UserManagement = () => {
                         Role
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#475569" }}>
+                        Assigned Projects
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#475569" }}>
                         Status
                       </TableCell>
                       <TableCell
@@ -880,7 +918,7 @@ const UserManagement = () => {
                   <TableBody>
                     {usersLoading && (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                           <CircularProgress size={32} />
                         </TableCell>
                       </TableRow>
@@ -946,6 +984,43 @@ const UserManagement = () => {
                             ))}
                           </TableCell>
 
+                          <TableCell sx={{ maxWidth: 220 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                              }}
+                            >
+                              {usersLoading ? (
+                                <CircularProgress size={14} />
+                              ) : (userProjectsMap[u.id] || []).length === 0 ? (
+                                <Typography
+                                  variant="caption"
+                                  color="text.disabled"
+                                >
+                                  None
+                                </Typography>
+                              ) : (
+                                (userProjectsMap[u.id] || []).map((p) => (
+                                  <Chip
+                                    key={p.id}
+                                    label={p.name}
+                                    size="small"
+                                    sx={{
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      height: 22,
+                                      bgcolor: "rgba(25,118,210,0.09)",
+                                      color: "#1565c0",
+                                      border: "1px solid rgba(25,118,210,0.25)",
+                                    }}
+                                  />
+                                ))
+                              )}
+                            </Box>
+                          </TableCell>
+
                           <TableCell>
                             <StatusChip status={u.status || "Active"} />
                           </TableCell>
@@ -976,7 +1051,7 @@ const UserManagement = () => {
                     {!usersLoading && users.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
+                          colSpan={6}
                           align="center"
                           sx={{ py: 8, color: "text.secondary" }}
                         >
