@@ -204,7 +204,8 @@ const PhotoTab = ({ user }) => {
 };
 
 // ─── Tab: Change Password ─────────────────────────────────────────────────────
-const PasswordTab = () => {
+const PasswordTab = ({ onClose }) => {
+  const { logout } = useAuth();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -250,13 +251,21 @@ const PasswordTab = () => {
     setLoading(true);
     setApiError("");
     try {
-      await changePassword({
+      const res = await changePassword({
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
         confirmPassword: form.confirmPassword,
       });
-      toast.success("Password changed successfully!");
+      const msg =
+        res.data?.message ||
+        "Password changed successfully. Please log in again.";
+      toast.success(msg, { duration: 4000 });
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      // Backend instructs the user to log in again — log out after a brief delay
+      setTimeout(() => {
+        onClose();
+        logout();
+      }, 1500);
     } catch (err) {
       setApiError(err.response?.data?.message || "Failed to change password.");
     } finally {
@@ -403,7 +412,7 @@ const SettingsDialog = ({ open, onClose }) => {
 
       <DialogContent sx={{ px: 3, pt: 2, pb: 1 }}>
         {tab === 0 && <PhotoTab user={user} />}
-        {tab === 1 && <PasswordTab />}
+        {tab === 1 && <PasswordTab onClose={onClose} />}
       </DialogContent>
 
       <Divider />

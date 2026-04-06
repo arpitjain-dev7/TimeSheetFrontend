@@ -109,7 +109,7 @@ export const deleteUser = (id) => api.delete(`/user/${id}`);
  * Change the logged-in user's password
  * @param {{ currentPassword: string, newPassword: string, confirmPassword: string }} data
  */
-export const changePassword = (data) => api.post('/user/change-password', data);
+export const changePassword = (data) => api.post('/user/me/change-password', data);
 
 export const updateUser = (id, dto, photo = null) => {
   const formData = new FormData();
