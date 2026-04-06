@@ -90,6 +90,25 @@ export const registerUser = (userData) => api.post('/auth/register', userData);
  */
 export const getMyProfile = () => api.get('/user/me');
 
+/**
+ * Get all users with the MANAGER role (for the manager dropdown when creating a user)
+ * GET /users/managers
+ */
+export const getManagers = () => api.get('/users/managers');
+
+/**
+ * Create a new user (admin/manager action) — uses /users endpoint with managerId
+ * @param {{ firstName, lastName, username, email, password, gender, location, designation, typeOfEmployment, role, managerId }} data
+ */
+export const createUser = (data) => api.post('/users', data);
+
+/**
+ * Update an existing user including role and managerId — uses PUT /users/{id} (JSON)
+ * @param {number} id
+ * @param {{ firstName, lastName, username, email, gender, location, designation, typeOfEmployment, role, managerId, password? }} dto
+ */
+export const updateUserAdmin = (id, dto) => api.put(`/users/${id}`, dto);
+
 /** * Fetch paginated list of users
  * @param {{ page?, size?, sortBy?, sortDir? }} params
  */

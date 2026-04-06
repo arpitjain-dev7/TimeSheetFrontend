@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EditUserForm from "../components/EditUserForm";
 import {
   Box,
   Typography,
@@ -23,6 +24,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  FormHelperText,
   Avatar,
   Tooltip,
   Grid,
@@ -40,11 +42,15 @@ import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import {
   registerUser,
+  createUser,
   getUsers,
   updateUser,
+  updateUserAdmin,
   deleteUser,
   getProjects,
   getProjectAssignedUsers,
+  getManagers,
+  updateUserPhoto,
 } from "../services/api";
 import toast from "react-hot-toast";
 
@@ -74,7 +80,8 @@ const EMPTY_FORM = {
   gender: "",
   location: "",
   designation: "",
-  managerEmail: "",
+  managerEmail: "", // used in edit mode (updateUser API)
+  managerId: null, // used in create mode (createUser API)
   typeOfEmployment: "",
   role: "ROLE_USER",
 };
@@ -141,6 +148,11 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Manager dropdown state (create mode only)
+  const [managers, setManagers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+  const [managersError, setManagersError] = useState(null);
+
   // Sync form state whenever the dialog opens or the target user changes
   useEffect(() => {
     if (open) {
@@ -150,11 +162,37 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
       setErrors({});
       setSubmitting(false);
     }
+    if (!open) {
+      setManagers([]);
+      setManagersError(null);
+    }
   }, [open, initial]);
 
+  // Fetch managers list when dialog opens (both create and edit mode)
+  useEffect(() => {
+    if (open) {
+      setManagersLoading(true);
+      setManagersError(null);
+      getManagers()
+        .then((res) => setManagers(res.data || []))
+        .catch(() =>
+          setManagersError("Failed to load managers. Please refresh."),
+        )
+        .finally(() => setManagersLoading(false));
+    }
+  }, [open]);
+
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    const { name, value } = e.target;
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      // When role changes away from ROLE_USER, clear managerId (not applicable)
+      if (name === "role" && value !== "ROLE_USER") {
+        updated.managerId = null;
+      }
+      return updated;
+    });
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handlePhotoChange = (e) => {
@@ -175,11 +213,9 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
     if (!initial?.id && !form.password) errs.password = "Password is required";
     else if (!initial?.id && form.password.length < 6)
       errs.password = "Minimum 6 characters";
-    if (
-      form.managerEmail &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.managerEmail)
-    )
-      errs.managerEmail = "Enter a valid email address";
+    // Manager required for ROLE_USER (both create and edit mode)
+    if ((form.role === "ROLE_USER" || !form.role) && !form.managerId)
+      errs.managerId = "Please select a manager for this user";
     return errs;
   };
 
@@ -193,8 +229,12 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
     try {
       await onSave(form, photo);
       onClose();
-    } catch {
-      // error toast is shown by onSave
+    } catch (err) {
+      // Map 400 field-level validation errors from backend details object
+      const details = err?.response?.data?.details;
+      if (details && typeof details === "object") {
+        setErrors((prev) => ({ ...prev, ...details }));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -340,7 +380,7 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
             />
           </Grid>
 
-          {/* Designation | Manager Email */}
+          {/* Designation | Manager Email (edit) / Manager dropdown (create) */}
           <Grid item xs={12} sm={6}>
             <TextField
               label="Designation"
@@ -353,20 +393,54 @@ const UserDialog = ({ open, onClose, onSave, initial }) => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Manager Email"
-              name="managerEmail"
-              value={form.managerEmail}
-              onChange={handleChange}
-              error={!!errors.managerEmail}
-              helperText={errors.managerEmail}
-              placeholder="Enter manager email"
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
+
+          {/* Manager dropdown — visible for ROLE_USER in both create and edit mode */}
+          {(form.role === "ROLE_USER" || !form.role) && (
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth size="small" error={!!errors.managerId}>
+                <InputLabel shrink required>
+                  Manager
+                </InputLabel>
+                <Select
+                  name="managerId"
+                  value={managersLoading ? "" : (form.managerId ?? "")}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      managerId: val !== "" ? Number(val) : null,
+                    }));
+                    setErrors((prev) => ({ ...prev, managerId: "" }));
+                  }}
+                  displayEmpty
+                  notched
+                  label="Manager"
+                  disabled={managersLoading}
+                >
+                  <MenuItem value="" disabled>
+                    {managersLoading
+                      ? "Loading managers…"
+                      : "— Select a Manager —"}
+                  </MenuItem>
+                  {!managersLoading && managers.length === 0 && (
+                    <MenuItem value="" disabled>
+                      No managers available
+                    </MenuItem>
+                  )}
+                  {managers.map((m) => (
+                    <MenuItem key={m.id} value={m.id}>
+                      {m.firstName} {m.lastName} — {m.email}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {(errors.managerId || managersError) && (
+                  <FormHelperText>
+                    {errors.managerId || managersError}
+                  </FormHelperText>
+                )}
+              </FormControl>
+            </Grid>
+          )}
 
           {/* Type of Employment | Role */}
           <Grid item xs={12} sm={6}>
@@ -638,7 +712,8 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userProjectsMap, setUserProjectsMap] = useState({});
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false); // create dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false); // edit dialog
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -702,8 +777,10 @@ const UserManagement = () => {
     setEditTarget({
       ...u,
       role: Array.isArray(u.roles) ? u.roles[0] : u.role || "ROLE_USER",
+      // Map managerId from the user object so the dropdown pre-selects correctly
+      managerId: u.managerId ?? null,
     });
-    setDialogOpen(true);
+    setEditDialogOpen(true);
   };
 
   const handleDelete = (u) => {
@@ -727,7 +804,7 @@ const UserManagement = () => {
 
   const handleSave = async (form, photoFile) => {
     if (editTarget?.id) {
-      // Build the dto payload (exclude internal/UI-only fields)
+      // Build the dto payload with all fields including role and managerId
       const dto = {
         firstName: form.firstName,
         lastName: form.lastName,
@@ -736,13 +813,20 @@ const UserManagement = () => {
         gender: form.gender || undefined,
         location: form.location || undefined,
         designation: form.designation || undefined,
-        managerEmail: form.managerEmail || undefined,
         typeOfEmployment: form.typeOfEmployment || undefined,
+        role: form.role || "ROLE_USER",
+        managerId:
+          form.role === "ROLE_USER" || !form.role
+            ? form.managerId
+              ? Number(form.managerId)
+              : null
+            : null,
       };
       // Include password only if the admin explicitly filled it in
       if (form.password) dto.password = form.password;
 
-      const response = await updateUser(editTarget.id, dto, photoFile).catch(
+      // Use the /users/{id} endpoint (JSON) so role + managerId are accepted
+      const response = await updateUserAdmin(editTarget.id, dto).catch(
         (err) => {
           const msg =
             err.response?.data?.message ||
@@ -751,21 +835,53 @@ const UserManagement = () => {
           throw err;
         },
       );
+
+      // Upload photo separately if one was selected
+      if (photoFile) {
+        await updateUserPhoto(editTarget.id, photoFile).catch(() => {
+          toast.error("User updated but photo upload failed.");
+        });
+      }
+
       toast.success(`User "${response.data.username}" updated successfully`);
       await fetchUsers(); // re-fetch to reflect server state
     } else {
-      // Create: call the register API
-      const response = await registerUser(form).catch((err) => {
-        const msg =
-          err.response?.data?.message ||
-          "Failed to create user. Please try again.";
-        toast.error(msg);
-        throw err; // re-throw so dialog keeps submitting=false via finally
+      // Create: POST /users with managerId (required for ROLE_USER)
+      const payload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        gender: form.gender || undefined,
+        location: form.location || undefined,
+        designation: form.designation || undefined,
+        typeOfEmployment: form.typeOfEmployment || undefined,
+        role: form.role || "ROLE_USER",
+        managerId:
+          form.role === "ROLE_USER" || !form.role
+            ? Number(form.managerId)
+            : null,
+      };
+      const response = await createUser(payload).catch((err) => {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        if (status === 409) {
+          toast.error(data?.message || "Username or email already exists.");
+        } else if (status === 404 && data?.message?.includes("Manager")) {
+          toast.error(data.message);
+        } else {
+          toast.error(
+            data?.message || "Failed to create user. Please try again.",
+          );
+        }
+        throw err; // re-throw so dialog can parse field-level errors
       });
-      if (response?.data?.status === 201 || response?.status === 201) {
-        toast.success(response.data?.message || "User created successfully");
-        await fetchUsers(); // re-fetch list from server
-      }
+      toast.success(
+        response.data?.message ||
+          `User "${response.data?.username}" created successfully`,
+      );
+      await fetchUsers(); // re-fetch list from server
     }
   };
 
@@ -1075,13 +1191,37 @@ const UserManagement = () => {
         </Box>
       </Box>
 
-      {/* Create / Edit dialog */}
+      {/* Create dialog */}
       <UserDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
-        initial={editTarget}
+        initial={null}
       />
+
+      {/* Edit dialog — uses EditUserForm with useUpdateUser hook */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Edit User</DialogTitle>
+        <DialogContent dividers sx={{ pt: 2 }}>
+          {editTarget && (
+            <EditUserForm
+              key={editTarget.id}
+              user={editTarget}
+              onSuccess={async () => {
+                setEditDialogOpen(false);
+                await fetchUsers();
+              }}
+              onCancel={() => setEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <DeleteConfirmDialog
