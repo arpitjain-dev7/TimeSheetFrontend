@@ -27,16 +27,41 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Persist tokens and user info returned by the login API.
-   * @param {{ accessToken, refreshToken, username, email, roles }} data
+   * @param {{ accessToken, refreshToken, username, email, roles, id, photoUrl, firstName, lastName }} data
+   * @returns {boolean} true if login state was stored, false if data was incomplete
    */
-  const login = ({ accessToken, refreshToken, username, email, roles }) => {
-    const userData = { username, email, roles };
+  const login = ({
+    accessToken,
+    refreshToken,
+    username,
+    email,
+    roles,
+    id,
+    photoUrl,
+    firstName,
+    lastName,
+  }) => {
+    if (!accessToken) {
+      // Guard: backend returned a response without a token (e.g. 304 with stale body).
+      // Do not store incomplete state — let the caller handle the error.
+      return false;
+    }
+    const userData = {
+      id,
+      username,
+      email,
+      roles,
+      photoUrl,
+      firstName,
+      lastName,
+    };
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user", JSON.stringify(userData));
     axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
     setAccessToken(accessToken);
     setUser(userData);
+    return true;
   };
 
   /**

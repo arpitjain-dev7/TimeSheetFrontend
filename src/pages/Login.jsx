@@ -74,7 +74,12 @@ const Login = () => {
       });
       const data = response.data;
 
-      login(data);
+      const ok = login(data);
+      if (!ok) {
+        throw new Error(
+          "Server returned an incomplete response. Please try again.",
+        );
+      }
       toast.success(`Welcome back, ${data.username || data.email}!`);
       navigate("/dashboard");
     } catch (err) {

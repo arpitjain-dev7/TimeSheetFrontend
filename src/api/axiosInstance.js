@@ -11,11 +11,15 @@ const axiosInstance = axios.create({
 });
 
 // Attach JWT token to every outgoing request
+// Skip for public auth endpoints to avoid sending stale tokens
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const isAuthEndpoint = config.url?.includes('/auth/');
+    if (!isAuthEndpoint) {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },

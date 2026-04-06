@@ -13,11 +13,21 @@ const api = axios.create({
 });
 
 // Attach JWT token from localStorage to every outgoing request
+// Skip auth header for public auth endpoints to prevent stale/expired tokens
+// from interfering with login and causing 304 or rejection on the backend.
 api.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem('accessToken');
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const isAuthEndpoint = config.url?.includes('/auth/');
+    if (!isAuthEndpoint) {
+      const accessToken = localStorage.getItem('accessToken');
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
+    }
+    // Prevent browser from caching auth-related POST responses (avoids 304 with stale tokens)
+    if (isAuthEndpoint) {
+      config.headers['Cache-Control'] = 'no-store';
+      config.headers['Pragma'] = 'no-cache';
     }
     return config;
   },
@@ -94,6 +104,12 @@ export const getUsers = ({ page = 0, size = 10, sortBy = 'id', sortDir = 'asc' }
  * @param {number} id
  */
 export const deleteUser = (id) => api.delete(`/user/${id}`);
+
+/**
+ * Change the logged-in user's password
+ * @param {{ currentPassword: string, newPassword: string, confirmPassword: string }} data
+ */
+export const changePassword = (data) => api.post('/user/change-password', data);
 
 export const updateUser = (id, dto, photo = null) => {
   const formData = new FormData();
