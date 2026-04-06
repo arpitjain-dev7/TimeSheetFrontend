@@ -13,7 +13,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser } from "../services/api";
+import { loginUser, getMyProfile } from "../services/api";
 import FormInput from "../components/FormInput";
 import ForgotPasswordDialog from "../components/forgotPassword/ForgotPasswordDialog";
 import toast from "react-hot-toast";
@@ -27,7 +27,7 @@ const BG_IMAGE =
  * validation, loading state, and a link to the Register page.
  */
 const Login = () => {
-  const { login } = useAuth();
+  const { login, updateUserData } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ usernameOrEmail: "", password: "" });
@@ -80,6 +80,21 @@ const Login = () => {
           "Server returned an incomplete response. Please try again.",
         );
       }
+
+      // Fetch full profile to get the user's id (not always in login response)
+      try {
+        const profileRes = await getMyProfile();
+        const profile = profileRes.data;
+        updateUserData({
+          id: profile.id,
+          photoUrl: profile.photoUrl,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+        });
+      } catch {
+        // Non-fatal: id won't be available until next login if this fails
+      }
+
       toast.success(`Welcome back, ${data.username || data.email}!`);
       navigate("/dashboard");
     } catch (err) {

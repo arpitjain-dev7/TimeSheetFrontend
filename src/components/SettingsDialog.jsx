@@ -22,7 +22,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "../context/AuthContext";
-import { updateUser, changePassword } from "../services/api";
+import { updateUserPhoto, changePassword } from "../services/api";
 import toast from "react-hot-toast";
 
 // ─── Password strength bar ────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ const StrengthBar = ({ password }) => {
 
 // ─── Tab: Update Photo ────────────────────────────────────────────────────────
 const PhotoTab = ({ user }) => {
-  const { login } = useAuth();
+  const { updateUserData } = useAuth();
   const fileRef = useRef(null);
   const [preview, setPreview] = useState(
     user?.photoUrl ? `http://localhost:8080/${user.photoUrl}` : null,
@@ -91,22 +91,11 @@ const PhotoTab = ({ user }) => {
     }
     setLoading(true);
     try {
-      const res = await updateUser(
-        user.id,
-        {
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          email: user.email,
-        },
-        file,
-      );
-      // Refresh auth context so Navbar avatar updates immediately
+      const res = await updateUserPhoto(user.id, file);
       const updatedPhotoUrl = res.data?.photoUrl;
       if (updatedPhotoUrl) {
-        const stored = JSON.parse(localStorage.getItem("user") || "{}");
-        const updated = { ...stored, photoUrl: updatedPhotoUrl };
-        localStorage.setItem("user", JSON.stringify(updated));
+        // Update React state so Navbar re-renders immediately (no refresh needed)
+        updateUserData({ photoUrl: updatedPhotoUrl });
         setPreview(`http://localhost:8080/${updatedPhotoUrl}`);
       }
       toast.success("Profile photo updated!");

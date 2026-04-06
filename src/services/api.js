@@ -86,8 +86,11 @@ export const registerUser = (userData) => api.post('/auth/register', userData);
 
 // ─── User Endpoints ───────────────────────────────────────────────────────────
 
-/**
- * Fetch paginated list of users
+/** * Get the logged-in user's own profile (returns id, roles, photoUrl, etc.)
+ */
+export const getMyProfile = () => api.get('/user/me');
+
+/** * Fetch paginated list of users
  * @param {{ page?, size?, sortBy?, sortDir? }} params
  */
 export const getUsers = ({ page = 0, size = 10, sortBy = 'id', sortDir = 'asc' } = {}) =>
@@ -118,6 +121,20 @@ export const updateUser = (id, dto, photo = null) => {
     formData.append('photo', photo);
   }
   return api.put(`/user/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+/**
+ * Update profile photo for a user
+ * PUT /user/{id}/photo
+ * @param {number} id
+ * @param {File} photo
+ */
+export const updateUserPhoto = (id, photo) => {
+  const formData = new FormData();
+  formData.append('photo', photo);
+  return api.put(`/user/${id}/photo`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };

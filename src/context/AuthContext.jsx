@@ -65,6 +65,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Merge partial fields into the current user state and localStorage.
+   * Use this after fetching the full profile to enrich stored data (e.g. id, photoUrl).
+   * @param {Partial<{id, photoUrl, firstName, lastName}>} fields
+   */
+  const updateUserData = (fields) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...fields };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  /**
    * Clear all auth state and storage on logout.
    */
   const logout = () => {
@@ -77,7 +90,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, login, logout, updateUserData, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
