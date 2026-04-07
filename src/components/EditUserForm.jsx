@@ -397,24 +397,6 @@ const EditUserForm = ({ user, onSuccess, onCancel }) => {
           </FormControl>
         </Grid>
 
-        {/* New password (optional) */}
-        <Grid item xs={12} sm={6}>
-          <TextField
-            label="New Password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={
-              errors.password || "Leave blank to keep current password"
-            }
-            fullWidth
-            size="small"
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-
         {/* Profile Photo */}
         <Grid item xs={12}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

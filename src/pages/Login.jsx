@@ -208,7 +208,7 @@ const Login = () => {
               fontWeight={800}
               sx={{ color: "#e3f2fd", letterSpacing: 1 }}
             >
-              TimeSheet Pro
+              Zucitech
             </Typography>
           </Box>
 
@@ -283,7 +283,7 @@ const Login = () => {
               fontWeight={800}
               sx={{ color: "#e3f2fd", letterSpacing: 1 }}
             >
-              TimeSheet Pro
+              Zucitech
             </Typography>
           </Box>
         )}
@@ -323,7 +323,7 @@ const Login = () => {
             variant="body2"
             sx={{ color: "rgba(255,255,255,0.6)", mt: 0.25 }}
           >
-            Access your TimeSheet Pro account
+            Access your Zucitech account
           </Typography>
         </Box>
 

@@ -95,7 +95,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
               whiteSpace: "nowrap",
             }}
           >
-            TimeSheet Pro
+            Zucitech
           </Typography>
         )}
       </Toolbar>
@@ -459,7 +459,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
             variant="caption"
             sx={{ color: "rgba(255,255,255,0.35)" }}
           >
-            v1.0.0 • TimeSheet Pro
+            v1.0.0 • Zucitech
           </Typography>
         </Box>
       )}

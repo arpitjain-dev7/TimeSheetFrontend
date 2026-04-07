@@ -92,7 +92,7 @@ const Navbar = ({ onToggleSidebar, sidebarOpen }) => {
               WebkitTextFillColor: "transparent",
             }}
           >
-            TimeSheet Pro
+            Zucitech
           </Typography>
 
           {/* User greeting (hidden on xs) */}
