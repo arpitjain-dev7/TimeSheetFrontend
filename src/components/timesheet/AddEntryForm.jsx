@@ -18,14 +18,20 @@ import {
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import EventIcon from "@mui/icons-material/Event";
 import NotesIcon from "@mui/icons-material/Notes";
 import AddIcon from "@mui/icons-material/Add";
 import { addEntry } from "../../api/timesheetApi";
 import { useMyProjects } from "../../hooks/useMyProjects";
+import useHolidays from "../../hooks/useHolidays";
+import WorkdayDatePicker, { getWorkdayError } from "./WorkdayDatePicker";
 import toast from "react-hot-toast";
 
-const EMPTY_FORM = { projectId: "", workDate: "", hoursWorked: "", description: "" };
+const EMPTY_FORM = {
+  projectId: "",
+  workDate: "",
+  hoursWorked: "",
+  description: "",
+};
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
@@ -43,6 +49,12 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch holidays for the currently selected year (or current year as default)
+  const selectedYear = form.workDate
+    ? parseInt(form.workDate.slice(0, 4))
+    : new Date().getFullYear();
+  const { holidays } = useHolidays(selectedYear);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -53,7 +65,12 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
   const validate = () => {
     const errs = {};
     if (!form.projectId) errs.projectId = "Project is required";
-    if (!form.workDate) errs.workDate = "Work date is required";
+    if (!form.workDate) {
+      errs.workDate = "Work date is required";
+    } else {
+      const workdayErr = getWorkdayError(form.workDate, holidays);
+      if (workdayErr) errs.workDate = workdayErr;
+    }
     if (!form.hoursWorked) {
       errs.hoursWorked = "Hours worked is required";
     } else {
@@ -70,7 +87,10 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
 
   const handleSubmit = async () => {
     const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      return;
+    }
     setSubmitting(true);
     setApiError("");
     try {
@@ -107,7 +127,8 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
       {/*  Gradient Header Strip  */}
       <Box
         sx={{
-          background: "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
+          background:
+            "linear-gradient(135deg,#1a237e 0%,#283593 60%,#01579b 100%)",
           px: 3,
           py: 2,
           display: "flex",
@@ -129,10 +150,18 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
           <AddCircleOutlineIcon sx={{ color: "#fff", fontSize: 20 }} />
         </Box>
         <Box>
-          <Typography variant="subtitle1" fontWeight={700} color="#fff" lineHeight={1.2}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            color="#fff"
+            lineHeight={1.2}
+          >
             Add New Entry
           </Typography>
-          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
+          <Typography
+            variant="caption"
+            sx={{ color: "rgba(255,255,255,0.72)" }}
+          >
             Log your work hours for a project
           </Typography>
         </Box>
@@ -168,7 +197,9 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
               >
                 <MenuItem value="" disabled>
                   <Typography color="text.disabled">
-                    {projectsLoading ? "Loading projects..." : "Select project..."}
+                    {projectsLoading
+                      ? "Loading projects..."
+                      : "Select project..."}
                   </Typography>
                 </MenuItem>
                 {projects.map((p) => (
@@ -177,29 +208,22 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
                   </MenuItem>
                 ))}
               </Select>
-              {errors.projectId && <FormHelperText>{errors.projectId}</FormHelperText>}
+              {errors.projectId && (
+                <FormHelperText>{errors.projectId}</FormHelperText>
+              )}
             </FormControl>
           </Grid>
 
           {/* Work Date */}
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="Work Date *"
+            <WorkdayDatePicker
               name="workDate"
-              type="date"
               value={form.workDate}
               onChange={handleChange}
+              holidays={holidays}
               error={!!errors.workDate}
               helperText={errors.workDate}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EventIcon sx={{ color: "#3949ab", fontSize: 18 }} />
-                  </InputAdornment>
-                ),
-              }}
+              label="Work Date *"
               sx={fieldSx}
             />
           </Grid>
@@ -226,7 +250,11 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <Typography variant="caption" color="text.disabled" fontWeight={600}>
+                    <Typography
+                      variant="caption"
+                      color="text.disabled"
+                      fontWeight={600}
+                    >
                       hrs
                     </Typography>
                   </InputAdornment>
@@ -244,7 +272,10 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
               value={form.description}
               onChange={handleChange}
               error={!!errors.description}
-              helperText={errors.description || `${form.description.length}/500 (optional)`}
+              helperText={
+                errors.description ||
+                `${form.description.length}/500 (optional)`
+              }
               placeholder="Describe the work done today..."
               fullWidth
               multiline
@@ -253,7 +284,10 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
               InputLabelProps={{ shrink: true }}
               InputProps={{
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1.5 }}>
+                  <InputAdornment
+                    position="start"
+                    sx={{ alignSelf: "flex-start", mt: 1.5 }}
+                  >
                     <NotesIcon sx={{ color: "#3949ab", fontSize: 18 }} />
                   </InputAdornment>
                 ),
@@ -268,13 +302,21 @@ const AddEntryForm = ({ timesheetId, onEntryAdded }) => {
             onClick={handleSubmit}
             variant="contained"
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <AddIcon />}
+            startIcon={
+              submitting ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <AddIcon />
+              )
+            }
             sx={{
               borderRadius: 2,
               fontWeight: 700,
               minWidth: 130,
               background: "linear-gradient(135deg,#1a237e,#01579b)",
-              "&:hover": { background: "linear-gradient(135deg,#283593,#0277bd)" },
+              "&:hover": {
+                background: "linear-gradient(135deg,#283593,#0277bd)",
+              },
               boxShadow: "0 4px 14px rgba(26,35,126,0.3)",
             }}
           >
