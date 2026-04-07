@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import EditUserForm from "../components/EditUserForm";
 import {
   Box,
@@ -33,6 +33,8 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleIcon from "@mui/icons-material/People";
@@ -43,6 +45,8 @@ import { useAuth } from "../context/AuthContext";
 import {
   registerUser,
   createUser,
+  importUsersCSV,
+  getCSVTemplate,
   getUsers,
   updateUser,
   updateUserAdmin,
@@ -701,6 +705,229 @@ const DeleteConfirmDialog = ({ open, user, onClose, onConfirm }) => {
   );
 };
 
+// ─── CSV Import Dialog ────────────────────────────────────────────────────────
+
+const CsvImportDialog = ({ open, onClose, onImported }) => {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null); // { imported, errors }
+  const [importError, setImportError] = useState("");
+  const inputRef = useRef(null);
+
+  const reset = () => {
+    setFile(null);
+    setResult(null);
+    setImportError("");
+  };
+
+  const handleClose = () => {
+    if (uploading) return;
+    reset();
+    onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    if (!selected.name.toLowerCase().endsWith(".csv")) {
+      setImportError("Only .csv files are accepted.");
+      setFile(null);
+      return;
+    }
+    setImportError("");
+    setFile(selected);
+    setResult(null);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    setImportError("");
+    try {
+      const res = await importUsersCSV(file);
+      setResult(res.data);
+      onImported(); // refresh the user list in the background
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Import failed. Please check your CSV and try again.";
+      setImportError(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      const res = await getCSVTemplate();
+      const url = URL.createObjectURL(
+        new Blob([res.data], { type: "text/csv" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "users_template.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Failed to download template.");
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ fontWeight: 700, pb: 0.5 }}>
+        Bulk Import Users via CSV
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Upload a CSV file to create multiple users at once. The file must
+          include the required columns.{" "}
+          <Button
+            size="small"
+            startIcon={<DownloadIcon fontSize="small" />}
+            onClick={downloadTemplate}
+            sx={{
+              textTransform: "none",
+              p: 0,
+              minWidth: 0,
+              verticalAlign: "baseline",
+            }}
+          >
+            Download template
+          </Button>
+        </Typography>
+
+        {/* Drop-zone / file picker */}
+        <Box
+          onClick={() => !uploading && inputRef.current?.click()}
+          sx={{
+            border: "2px dashed",
+            borderColor: file ? "primary.main" : "divider",
+            borderRadius: 2,
+            p: 3,
+            textAlign: "center",
+            cursor: uploading ? "not-allowed" : "pointer",
+            bgcolor: file ? "primary.50" : "grey.50",
+            transition: "all 0.2s",
+            "&:hover": { borderColor: "primary.main", bgcolor: "primary.50" },
+          }}
+        >
+          <UploadFileIcon
+            sx={{
+              fontSize: 40,
+              color: file ? "primary.main" : "text.disabled",
+              mb: 1,
+            }}
+          />
+          {file ? (
+            <Typography variant="body2" fontWeight={600}>
+              {file.name}{" "}
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+              >
+                ({(file.size / 1024).toFixed(1)} KB)
+              </Typography>
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Click to select a <strong>.csv</strong> file
+            </Typography>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".csv"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+        </Box>
+
+        {importError && (
+          <Typography
+            variant="body2"
+            color="error"
+            sx={{
+              mt: 1.5,
+              px: 1,
+              py: 0.75,
+              bgcolor: "rgba(211,47,47,0.07)",
+              borderRadius: 1,
+            }}
+          >
+            {importError}
+          </Typography>
+        )}
+
+        {result && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              bgcolor: "success.50",
+              border: "1px solid",
+              borderColor: "success.light",
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="body2" fontWeight={700} color="success.dark">
+              Import complete
+            </Typography>
+            {result.imported != null && (
+              <Typography variant="body2" color="success.dark">
+                {result.imported} user(s) imported successfully.
+              </Typography>
+            )}
+            {result.errors?.length > 0 && (
+              <Typography variant="body2" color="error.main" sx={{ mt: 0.5 }}>
+                {result.errors.length} row(s) had errors:{" "}
+                {result.errors.slice(0, 3).join("; ")}
+                {result.errors.length > 3 ? " …" : ""}
+              </Typography>
+            )}
+          </Box>
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+        <Button
+          onClick={handleClose}
+          disabled={uploading}
+          variant="outlined"
+          sx={{ borderRadius: 2 }}
+        >
+          {result ? "Close" : "Cancel"}
+        </Button>
+        {!result && (
+          <Button
+            onClick={handleUpload}
+            disabled={!file || uploading}
+            variant="contained"
+            startIcon={
+              uploading ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <UploadFileIcon />
+              )
+            }
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            {uploading ? "Importing…" : "Import"}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const UserManagement = () => {
@@ -716,6 +943,7 @@ const UserManagement = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false); // edit dialog
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false); // CSV import dialog
 
   const SIDEBAR_WIDTH = sidebarOpen ? 240 : 72;
 
@@ -965,6 +1193,22 @@ const UserManagement = () => {
               }}
             >
               Create User
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<UploadFileIcon />}
+              onClick={() => setCsvDialogOpen(true)}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.12)",
+                color: "#fff",
+                fontWeight: 700,
+                borderRadius: 2,
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.22)" },
+              }}
+            >
+              Import via CSV
             </Button>
           </Box>
 
@@ -1229,6 +1473,15 @@ const UserManagement = () => {
         user={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+
+      {/* ── CSV Import Dialog ─────────────────────────────────────────── */}
+      <CsvImportDialog
+        open={csvDialogOpen}
+        onClose={() => setCsvDialogOpen(false)}
+        onImported={() => {
+          fetchUsers(); // refresh list in background, dialog stays open to show result
+        }}
       />
     </Box>
   );

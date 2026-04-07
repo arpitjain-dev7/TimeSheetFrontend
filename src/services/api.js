@@ -103,6 +103,26 @@ export const getManagers = () => api.get('/users/managers');
 export const createUser = (data) => api.post('/users', data);
 
 /**
+ * Bulk-import users from a CSV file
+ * POST /users/import  — multipart/form-data with field "file"
+ * @param {File} file
+ */
+export const importUsersCSV = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/users/import/csv', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+/**
+ * Download the sample CSV template for bulk user import
+ * GET /users/import/csv/template  — returns the file as a blob
+ */
+export const getCSVTemplate = () =>
+  api.get('/users/import/csv/template', { responseType: 'blob' });
+
+/**
  * Update an existing user including role and managerId — uses PUT /users/{id} (JSON)
  * @param {number} id
  * @param {{ firstName, lastName, username, email, gender, location, designation, typeOfEmployment, role, managerId, password? }} dto

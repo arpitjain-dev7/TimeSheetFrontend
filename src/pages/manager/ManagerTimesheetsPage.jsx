@@ -50,8 +50,8 @@ const formatDate = (d) => {
 };
 
 const EMPTY_FILTERS = {
-  userId: "",
-  projectId: "",
+  username: "",
+  projectName: "",
   dateFrom: "",
   dateTo: "",
   status: "",
@@ -90,22 +90,50 @@ const ManagerTimesheetsPage = () => {
 
   const buildParams = (f) => {
     const p = {};
-    if (f.userId) p.userId = Number(f.userId);
-    if (f.projectId) p.projectId = Number(f.projectId);
+    // Only pass params the backend supports (status, dateFrom, dateTo)
+    // username and projectName are filtered client-side after fetch
     if (f.dateFrom) p.dateFrom = f.dateFrom;
     if (f.dateTo) p.dateTo = f.dateTo;
     if (f.status) p.status = f.status;
     return p;
   };
 
+  // Client-side filter for username and projectName
+  const applyClientFilters = (list, f) => {
+    let result = list;
+    if (f.username?.trim()) {
+      const q = f.username.trim().toLowerCase();
+      result = result.filter((ts) => ts.username?.toLowerCase().includes(q));
+    }
+    if (f.projectName?.trim()) {
+      const q = f.projectName.trim().toLowerCase();
+      result = result.filter(
+        (ts) =>
+          ts.entries?.some((e) => e.projectName?.toLowerCase().includes(q)) ||
+          ts.projectName?.toLowerCase().includes(q),
+      );
+    }
+    return result;
+  };
+
   const fetchTimesheets = async (page = 0, active = appliedFilters) => {
     setLoading(true);
     try {
-      const res = await filterTimesheets(buildParams(active), page);
+      // Fetch a larger page when client-side filters are active so results aren't cut off
+      const hasClientFilter =
+        active.username?.trim() || active.projectName?.trim();
+      const pageSize = hasClientFilter ? 200 : 10;
+      const res = await filterTimesheets(
+        buildParams(active),
+        hasClientFilter ? 0 : page,
+        pageSize,
+      );
       const data = res.data;
-      setTimesheets(data.timesheets || []);
-      setCurrentPage(data.currentPage ?? page);
-      setTotalPages(data.totalPages ?? 1);
+      const raw = data.timesheets || [];
+      const filtered = applyClientFilters(raw, active);
+      setTimesheets(filtered);
+      setCurrentPage(hasClientFilter ? 0 : (data.currentPage ?? page));
+      setTotalPages(hasClientFilter ? 1 : (data.totalPages ?? 1));
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load timesheets");
     } finally {
@@ -237,27 +265,25 @@ const ManagerTimesheetsPage = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={4} lg={2}>
                   <TextField
-                    label="User ID"
-                    name="userId"
-                    value={filters.userId}
+                    label="Username"
+                    name="username"
+                    value={filters.username}
                     onChange={handleFilterChange}
-                    type="number"
                     size="small"
                     fullWidth
-                    placeholder="e.g. 3"
+                    placeholder="e.g. john"
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4} lg={2}>
                   <TextField
-                    label="Project ID"
-                    name="projectId"
-                    value={filters.projectId}
+                    label="Project Name"
+                    name="projectName"
+                    value={filters.projectName}
                     onChange={handleFilterChange}
-                    type="number"
                     size="small"
                     fullWidth
-                    placeholder="e.g. 2"
+                    placeholder="e.g. Alpha"
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
